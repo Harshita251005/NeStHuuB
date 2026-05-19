@@ -18,32 +18,57 @@ db.connect((err) => {
   } else {
     console.log("✅ MySQL connected successfully!");
 
-    const checkColumnSql = `
-      SELECT COLUMN_NAME
-      FROM information_schema.columns
-      WHERE table_schema = DATABASE()
-        AND table_name = 'pgs'
-        AND column_name = 'image'
-    `;
+    // 1. Auto-initialize tables if they don't exist
+    const queries = [
+      `CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100),
+        email VARCHAR(100) UNIQUE,
+        password VARCHAR(255),
+        phone VARCHAR(15)
+      );`,
+      `CREATE TABLE IF NOT EXISTS owners (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100),
+        email VARCHAR(100) UNIQUE,
+        password VARCHAR(255),
+        phone VARCHAR(15)
+      );`,
+      `CREATE TABLE IF NOT EXISTS pgs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        owner_id INT,
+        name VARCHAR(150),
+        location VARCHAR(150),
+        price DECIMAL(10,2),
+        description TEXT,
+        image MEDIUMTEXT,
+        FOREIGN KEY (owner_id) REFERENCES owners(id) ON DELETE CASCADE
+      );`,
+      `CREATE TABLE IF NOT EXISTS bookings (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT,
+        pg_id INT,
+        booking_date DATE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (pg_id) REFERENCES pgs(id) ON DELETE CASCADE
+      );`
+    ];
 
-    db.query(checkColumnSql, (checkErr, results) => {
-      if (checkErr) {
-        console.error("❌ Failed to check pgs table columns:", checkErr);
+    const runQueriesSequentially = (index) => {
+      if (index >= queries.length) {
+        console.log("✅ Database schema initialized successfully.");
         return;
       }
+      db.query(queries[index], (queryErr) => {
+        if (queryErr) {
+          console.error(`❌ Failed to run query ${index}:`, queryErr);
+        } else {
+          runQueriesSequentially(index + 1);
+        }
+      });
+    };
 
-      if (results.length === 0) {
-        db.query("ALTER TABLE pgs ADD COLUMN image MEDIUMTEXT", (alterErr) => {
-          if (alterErr) {
-            console.error("❌ Failed to add pgs.image column:", alterErr);
-          } else {
-            console.log("✅ Added pgs.image column.");
-          }
-        });
-      } else {
-        console.log("✅ pgs.image column already exists.");
-      }
-    });
+    runQueriesSequentially(0);
   }
 });
 
