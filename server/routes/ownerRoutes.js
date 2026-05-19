@@ -61,11 +61,14 @@ router.post("/login", async (req, res) => {
 
 // Add PG
 router.post("/pg", (req, res) => {
-  const { owner_id, name, location, price, description } = req.body;
+  const { owner_id, name, location, price, description, image } = req.body;
   const sql =
-    "INSERT INTO pgs (owner_id, name, location, price, description) VALUES (?, ?, ?, ?, ?)";
-  db.query(sql, [owner_id, name, location, price, description], (err) => {
-    if (err) return res.status(500).json({ error: err });
+    "INSERT INTO pgs (owner_id, name, location, price, description, image) VALUES (?, ?, ?, ?, ?, ?)";
+  db.query(sql, [owner_id, name, location, price, description, image || null], (err) => {
+    if (err) {
+      console.error("❌ Add PG error:", err);
+      return res.status(500).json({ error: err });
+    }
     res.json({ message: "PG added successfully!" });
   });
 });
@@ -103,17 +106,31 @@ router.get("/:ownerId/pgs", (req, res) => {
 router.put("/pg/:pgId", (req, res) => {
   try {
     const { pgId } = req.params;
-    const { name, location, price, description } = req.body;
-    const sql = "UPDATE pgs SET name = ?, location = ?, price = ?, description = ? WHERE id = ?";
+    const { owner_id, name, location, price, description, image } = req.body;
     
-    db.query(sql, [name, location, price, description, pgId], (err, result) => {
+    if (!owner_id) {
+      return res.status(403).json({ error: "Owner ID is required for authorization" });
+    }
+    
+    let sql;
+    let params;
+    
+    if (image !== undefined) {
+      sql = "UPDATE pgs SET name = ?, location = ?, price = ?, description = ?, image = ? WHERE id = ? AND owner_id = ?";
+      params = [name, location, price, description, image, pgId, owner_id];
+    } else {
+      sql = "UPDATE pgs SET name = ?, location = ?, price = ?, description = ? WHERE id = ? AND owner_id = ?";
+      params = [name, location, price, description, pgId, owner_id];
+    }
+    
+    db.query(sql, params, (err, result) => {
       if (err) {
         console.error("❌ Update PG error:", err);
         return res.status(500).json({ error: err });
       }
       
       if (result.affectedRows === 0) {
-        return res.status(404).json({ error: "PG not found" });
+        return res.status(403).json({ error: "PG not found or you are not authorized to update it" });
       }
       
       res.json({ message: "PG updated successfully!" });
@@ -128,16 +145,22 @@ router.put("/pg/:pgId", (req, res) => {
 router.delete("/pg/:pgId", (req, res) => {
   try {
     const { pgId } = req.params;
-    const sql = "DELETE FROM pgs WHERE id = ?";
+    const { owner_id } = req.body;
     
-    db.query(sql, [pgId], (err, result) => {
+    if (!owner_id) {
+      return res.status(403).json({ error: "Owner ID is required for authorization" });
+    }
+    
+    const sql = "DELETE FROM pgs WHERE id = ? AND owner_id = ?";
+    
+    db.query(sql, [pgId, owner_id], (err, result) => {
       if (err) {
         console.error("❌ Delete PG error:", err);
         return res.status(500).json({ error: err });
       }
       
       if (result.affectedRows === 0) {
-        return res.status(404).json({ error: "PG not found" });
+        return res.status(403).json({ error: "PG not found or you are not authorized to delete it" });
       }
       
       res.json({ message: "PG deleted successfully!" });

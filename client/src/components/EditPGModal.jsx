@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { X, Building, MapPin, DollarSign, FileText, Save } from 'lucide-react';
 
-const EditPGModal = ({ pg, isOpen, onClose, onUpdate }) => {
+const EditPGModal = ({ pg, isOpen, onClose, onUpdate, ownerId }) => {
   const [formData, setFormData] = useState({
     name: '',
     location: '',
     price: '',
     description: ''
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -18,6 +20,8 @@ const EditPGModal = ({ pg, isOpen, onClose, onUpdate }) => {
         price: pg.price || '',
         description: pg.description || ''
       });
+      setImagePreview(pg.image || null);
+      setImageFile(null);
     }
   }, [pg]);
 
@@ -28,12 +32,48 @@ const EditPGModal = ({ pg, isOpen, onClose, onUpdate }) => {
     });
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size must be less than 5MB');
+        return;
+      }
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        alert('Only JPEG, PNG, and WebP images are allowed');
+        return;
+      }
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     
     try {
-      await onUpdate(pg.id, formData);
+      const updateData = {
+        ...formData,
+        owner_id: ownerId
+      };
+      if (imageFile) {
+        updateData.image = imagePreview;
+      } else if (imagePreview === null) {
+        // If image was removed explicitly
+        updateData.image = null;
+      }
+      
+      await onUpdate(pg.id, updateData);
       onClose();
     } catch (error) {
       console.error('Error updating PG:', error);
@@ -107,6 +147,36 @@ const EditPGModal = ({ pg, isOpen, onClose, onUpdate }) => {
               placeholder="Enter monthly rent"
               min="0"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              PG Image
+            </label>
+            {!imagePreview ? (
+              <label className="block w-full border-2 border-dashed border-gray-300 rounded-lg p-4 cursor-pointer hover:border-gray-400 transition duration-200">
+                <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                  <span className="text-sm font-medium text-gray-600">Click to upload new image</span>
+                </div>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+              </label>
+            ) : (
+              <div className="relative">
+                <img src={imagePreview} alt="PG Preview" className="w-full h-32 object-cover rounded-lg" />
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-lg transition duration-200"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
 
           <div>

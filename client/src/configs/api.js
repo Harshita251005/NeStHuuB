@@ -23,7 +23,7 @@ export const ownerAPI = {
   login: (credentials) => api.post('/owners/login', credentials),
   addPG: (pgData) => api.post('/owners/pg', pgData),
   updatePG: (pgId, pgData) => api.put(`/owners/pg/${pgId}`, pgData),
-  deletePG: (pgId) => api.delete(`/owners/pg/${pgId}`),
+  deletePG: (pgId, ownerId) => api.delete(`/owners/pg/${pgId}`, { data: { owner_id: ownerId } }),
   getAllPGs: () => api.get('/owners/pgs'),
   getOwnerPGs: (ownerId) => api.get(`/owners/${ownerId}/pgs`),
   getAll: () => api.get('/owners'),
@@ -33,6 +33,8 @@ export const bookingAPI = {
   create: (bookingData) => api.post('/bookings', bookingData),
   getAll: () => api.get('/bookings'),
   getByPG: (pgId) => api.get(`/bookings/pg/${pgId}`),
+  getByUser: (userId) => api.get(`/bookings/user/${userId}`),
+  getByOwner: (ownerId) => api.get(`/bookings/owner/${ownerId}`),
 };
 
 export default api;
