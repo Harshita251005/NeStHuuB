@@ -12,8 +12,8 @@ router.post("/register", async (req, res) => {
     const sql = "INSERT INTO users (name, email, password, phone) VALUES (?, ?, ?, ?)";
     db.query(sql, [name, email, hash, phone], (err) => {
       if (err) {
-        console.error("❌ User insert error:", err);
-        return res.status(500).json({ error: err });
+        console.error("❌ User registration error:", err);
+        return res.status(500).json({ error: err.sqlMessage || "Internal server error" });
       }
       res.json({ message: "User registered successfully!" });
     });
@@ -63,7 +63,7 @@ router.get("/", (req, res) => {
   db.query("SELECT id, name, email, phone FROM users", (err, result) => {
     if (err) {
       console.error("❌ Fetch users error:", err);
-      return res.status(500).json({ error: err });
+      return res.status(500).json({ error: err.sqlMessage || "Internal server error" });
     }
     res.json(result);
   });

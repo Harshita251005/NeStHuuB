@@ -13,7 +13,7 @@ router.post("/register", async (req, res) => {
     db.query(sql, [name, email, hash, phone], (err) => {
       if (err) {
         console.error("❌ Owner registration error:", err);
-        return res.status(500).json({ error: err });
+        return res.status(500).json({ error: err.sqlMessage || "Internal server error" });
       }
       res.json({ message: "Owner registered successfully!" });
     });
@@ -67,7 +67,7 @@ router.post("/pg", (req, res) => {
   db.query(sql, [owner_id, name, location, price, description, image || null], (err) => {
     if (err) {
       console.error("❌ Add PG error:", err);
-      return res.status(500).json({ error: err });
+      return res.status(500).json({ error: err.sqlMessage || "Internal server error" });
     }
     res.json({ message: "PG added successfully!" });
   });
@@ -83,7 +83,7 @@ router.get("/pgs", (req, res) => {
   db.query(sql, (err, result) => {
     if (err) {
       console.error("❌ Fetch PGs error:", err);
-      return res.status(500).json({ error: err });
+      return res.status(500).json({ error: err.sqlMessage || "Internal server error" });
     }
     res.json(result);
   });
@@ -96,7 +96,7 @@ router.get("/:ownerId/pgs", (req, res) => {
   db.query(sql, [ownerId], (err, result) => {
     if (err) {
       console.error("❌ Fetch owner PGs error:", err);
-      return res.status(500).json({ error: err });
+      return res.status(500).json({ error: err.sqlMessage || "Internal server error" });
     }
     res.json(result);
   });
@@ -126,7 +126,7 @@ router.put("/pg/:pgId", (req, res) => {
     db.query(sql, params, (err, result) => {
       if (err) {
         console.error("❌ Update PG error:", err);
-        return res.status(500).json({ error: err });
+        return res.status(500).json({ error: err.sqlMessage || "Internal server error" });
       }
       
       if (result.affectedRows === 0) {
@@ -156,7 +156,7 @@ router.delete("/pg/:pgId", (req, res) => {
     db.query(sql, [pgId, owner_id], (err, result) => {
       if (err) {
         console.error("❌ Delete PG error:", err);
-        return res.status(500).json({ error: err });
+        return res.status(500).json({ error: err.sqlMessage || "Internal server error" });
       }
       
       if (result.affectedRows === 0) {
@@ -176,7 +176,7 @@ router.get("/", (req, res) => {
   db.query("SELECT id, name, email, phone FROM owners", (err, result) => {
     if (err) {
       console.error("❌ Fetch owners error:", err);
-      return res.status(500).json({ error: err });
+      return res.status(500).json({ error: err.sqlMessage || "Internal server error" });
     }
     res.json(result);
   });

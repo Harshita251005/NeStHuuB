@@ -32,7 +32,7 @@ router.get("/user/:userId", (req, res) => {
   db.query(sql, [userId], (err, result) => {
     if (err) {
       console.error("❌ Fetch user bookings error:", err);
-      return res.status(500).json({ error: err });
+      return res.status(500).json({ error: err.sqlMessage || "Internal server error" });
     }
     res.json(result);
   });
@@ -53,7 +53,7 @@ router.get("/owner/:ownerId", (req, res) => {
   db.query(sql, [ownerId], (err, result) => {
     if (err) {
       console.error("❌ Fetch owner bookings error:", err);
-      return res.status(500).json({ error: err });
+      return res.status(500).json({ error: err.sqlMessage || "Internal server error" });
     }
     res.json(result);
   });
@@ -74,7 +74,7 @@ router.get("/pg/:pgId", (req, res) => {
   db.query(sql, [pgId], (err, result) => {
     if (err) {
       console.error("❌ Fetch PG bookings error:", err);
-      return res.status(500).json({ error: err });
+      return res.status(500).json({ error: err.sqlMessage || "Internal server error" });
     }
     res.json(result);
   });
